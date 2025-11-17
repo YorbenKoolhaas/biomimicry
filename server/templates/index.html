@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Robotic Arm Control</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+    <div class="container">
+
+        <h1>Robotic Arm Control Panel</h1>
+
+        <!-- Coordinate Input Section -->
+        <div class="card">
+            <h2>Set Coordinates</h2>
+            <form id="coordForm" action="/set_coords" method="POST">
+                <div class="coord-grid">
+                    <label>X <input name="x" type="number" step="1"></label>
+                    <label>Y <input name="y" type="number" step="1"></label>
+                    <label>Z <input name="z" type="number" step="1"></label>
+                </div>
+                <button class="submit-btn" type="submit">Send Coordinates</button>
+            </form>
+        </div>
+
+        <!-- Incremental Movement Section -->
+        <div class="card">
+            <h2>Incremental Movement</h2>
+            <div class="movement-grid">
+
+                <div class="axis-group">
+                    <h3>X Axis</h3>
+                    <button onclick="sendMove('x', 1)">X +</button>
+                    <button onclick="sendMove('x', -1)">X -</button>
+                </div>
+
+                <div class="axis-group">
+                    <h3>Y Axis</h3>
+                    <button onclick="sendMove('y', 1)">Y +</button>
+                    <button onclick="sendMove('y', -1)">Y -</button>
+                </div>
+
+                <div class="axis-group">
+                    <h3>Z Axis</h3>
+                    <button onclick="sendMove('z', 1)">Z +</button>
+                    <button onclick="sendMove('z', -1)">Z -</button>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Future Video Panels -->
+        <div class="card video-area">
+            <h2>Camera Streams (In construction)</h2>
+            <div class="video-grid">
+                <div class="video-box">Cam1 Feed</div>
+                <div class="video-box">Cam2 Feed</div>
+                <div class="video-box">YOLOv8 Detection?</div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        function sendMove(axis, amount) {
+            fetch("/move", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ axis: axis, amount: amount })
+            });
+        }
+    </script>
+
+</body>
+</html>
