@@ -14,11 +14,11 @@
         <!-- Coordinate Input Section -->
         <div class="card">
             <h2>Set Coordinates</h2>
-            <form id="coordForm" action="/set_coords" method="POST">
+            <form id="coordForm">
                 <div class="coord-grid">
-                    <label>X <input name="x" type="number" step="1"></label>
-                    <label>Y <input name="y" type="number" step="1"></label>
-                    <label>Z <input name="z" type="number" step="1"></label>
+                    <label>X <input name="x" type="number" step="1" value="0"></label>
+                    <label>Y <input name="y" type="number" step="1" value="0"></label>
+                    <label>Z <input name="z" type="number" step="1" value="0"></label>
                 </div>
                 <button class="submit-btn" type="submit">Send Coordinates</button>
             </form>
@@ -63,14 +63,25 @@
     </div>
 
     <script>
-        function sendMove(axis, amount) {
-            fetch("/move", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ axis: axis, amount: amount })
-            });
-        }
-    </script>
+        document.getElementById("coordForm").addEventListener("submit", function(e) {
+        e.preventDefault(); // Stops page reload
 
+        const formData = new FormData(this);
+
+        // Convert form data to a JSON object
+        const data = Object.fromEntries(formData.entries());
+
+        fetch("/send_coords", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(data)
+        })
+        .then(res => res.json())
+        .then(response => {
+            console.log("Arm moved:", response);
+        })
+        .catch(err => console.error("Error:", err));
+    });
+    </script>
 </body>
 </html>

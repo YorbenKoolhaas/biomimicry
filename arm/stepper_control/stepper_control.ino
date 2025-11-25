@@ -31,11 +31,36 @@ typedef struct {
     float delta;
 } JointAngles;
 
-const JointAngles homePosition = {90.0, -110.0, 20.0, 0.0};
+const JointAngles homePosition = {90.0, 110.0, 20.0, 0.0};
 JointAngles currentPosition = homePosition;
 
-int move(float th1, float th2, float th3, float delta) {
-    // Placeholder for move_to function
+const float step_size = 0.9;
+const int speed = 100;
+
+int move_all(float th1, float th2, float th3, float delta) {
+//    for (int i = 0; i < (delta/step_size); i++) {
+//        motorA.runSpeed();
+//        delay(10);
+//    }
+//  delay(10);
+    for (int j = 0; j < (th1/step_size); j++) {
+        motorX.runSpeed();
+        delay(10);
+    }
+    delay(10);
+    for (int k = 0; k < (th2/step_size); k++) {
+        motorY.runSpeed();
+        delay(10);
+    }
+    delay(10);
+    for (int l = 0; l < (th3/step_size); l++) {
+        motorZ.runSpeed();
+        delay(10);
+    }
+//    motorX.move(th1/step_size);
+//    motorY.move(th2/step_size);
+//    motorZ.move(th3/step_size);
+//    motorA.move(delta/step_size);
     return 0;
 }
 
@@ -49,42 +74,42 @@ void setup() {
     motorX.setEnablePin(MOTOR_X_ENABLE_PIN);
     motorX.setPinsInverted(false, false, true);
     motorX.setAcceleration(100);
-    //motorX.setMaxSpeed(100);
-    //motorX.setSpeed(100);
+    motorX.setMaxSpeed(100);
+    motorX.setSpeed(speed);
     motorX.enableOutputs();
 
     motorY.setEnablePin(MOTOR_Y_ENABLE_PIN);
     motorY.setPinsInverted(false, false, true);
     motorY.setAcceleration(100);
-    //motorY.setMaxSpeed(100);
-    //motorY.setSpeed(100);
+    motorY.setMaxSpeed(100);
+    motorY.setSpeed(speed);
     motorY.enableOutputs();
 
     motorZ.setEnablePin(MOTOR_Z_ENABLE_PIN);
     motorZ.setPinsInverted(false, false, true);
     motorZ.setAcceleration(100);
-    //motorZ.setMaxSpeed(100);
-    //motorZ.setSpeed(100);
+    motorZ.setMaxSpeed(100);
+    motorZ.setSpeed(speed);
     motorZ.enableOutputs();
 
     motorA.setEnablePin(MOTOR_Z_ENABLE_PIN);
     motorA.setPinsInverted(false, false, true);
     motorA.setAcceleration(100);
-    //motorA.setMaxSpeed(100);
-    //motorA.setSpeed(100);
+    motorA.setMaxSpeed(100);
+    motorA.setSpeed(speed);
     motorA.enableOutputs();
 
-    move(homePosition.th1, homePosition.th2, homePosition.th3, homePosition.delta);
+    move_all(homePosition.th1, homePosition.th2, homePosition.th3, homePosition.delta);
 }
 
 void loop() {
     if (Serial.available() > 0) {
         String command = Serial.readStringUntil('\n');
-        command = command.trim();
+        command.trim();
         if (command.startsWith("MOVE ")) {
             int th1, th2, th3, delta;
             sscanf(command.c_str(), "MOVE %d %d %d %d", &th1, &th2, &th3, &delta);
-            int result = move(th1 - currentPosition.th1, th2 - currentPosition.th2, th3 - currentPosition.th3, delta - currentPosition.delta);
+            int result = move_all(th1 - currentPosition.th1, th2 - currentPosition.th2, th3 - currentPosition.th3, delta - currentPosition.delta);
             if (result == 0) {
                 currentPosition.th1 = th1;
                 currentPosition.th2 = th2;
