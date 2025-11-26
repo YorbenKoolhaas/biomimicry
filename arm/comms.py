@@ -1,7 +1,7 @@
 from serial import Serial
 from arm.inv_kinemetics import calculate_angles
 
-SER = Serial('/dev/ttyUSB0', 9600, timeout=1)
+SER = Serial('/dev/ttyUSB1', 9600, timeout=1)
 SER.reset_input_buffer()
 
 def move_arm(x: float | int, y: float | int, z: float | int) -> bool:
@@ -23,5 +23,5 @@ def move_arm(x: float | int, y: float | int, z: float | int) -> bool:
         if SER.in_waiting > 0:
             line = SER.readline().decode('utf-8').rstrip()
             print(line)
-            break
+            # break
     return True
