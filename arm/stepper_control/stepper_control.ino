@@ -27,20 +27,20 @@ AccelStepper motorA(1, MOTOR_A_STEP_PIN, MOTOR_A_DIR_PIN);
 const float step_size = 0.9;
 const int base_speed = 500;
 const int max_speed = 1000;
-const int accel_speed = 400;
+const int accel_speed = 300;
 
 int move_all(float th1, float th2, float th3, float delta) {
     motorX.moveTo(th1/step_size);
     motorX.runToPosition();
     
-//    motorY.moveTo(th2/step_size);
-//    motorY.runToPosition();
+    motorY.moveTo(th2/step_size);
+    motorY.runToPosition();
     
-//    motorZ.moveTo(th3/step_size);
-//    motorZ.runToPosition();
+    motorZ.moveTo(th3/step_size);
+    motorZ.runToPosition();
 
-    motorA.moveTo(delta/step_size);
-    motorA.runToPosition();
+//    motorA.moveTo(delta/step_size);
+//    motorA.runToPosition();
     
     return 0;
 }
@@ -92,8 +92,8 @@ void loop() {
         if (command.startsWith("MOVE ")) {
             int th1, th2, th3, delta;
             sscanf(command.c_str(), "MOVE %d %d %d %d", &th1, &th2, &th3, &delta);
-            String rec = "Received: " + String(th1) + "," + String(th2) + "," + String(th3) + "," + String(delta);
-            Serial.println(rec);
+//            String rec = "Received: " + String(th1) + "," + String(th2) + "," + String(th3) + "," + String(delta);
+//            Serial.println(rec);
             int result = move_all(th1, th2, th3, delta);
             if (result == 0) {
                 Serial.println("Move successful");

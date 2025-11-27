@@ -31,22 +31,34 @@
 
                 <div class="axis-group">
                     <h3>X Axis</h3>
-                    <button onclick="sendMove('x', 1)">X +</button>
-                    <button onclick="sendMove('x', -1)">X -</button>
+                    <button onclick="sendMove('x', 10)">X +</button>
+                    <button onclick="sendMove('x', -10)">X -</button>
                 </div>
 
                 <div class="axis-group">
                     <h3>Y Axis</h3>
-                    <button onclick="sendMove('y', 1)">Y +</button>
-                    <button onclick="sendMove('y', -1)">Y -</button>
+                    <button onclick="sendMove('y', 10)">Y +</button>
+                    <button onclick="sendMove('y', -10)">Y -</button>
                 </div>
 
                 <div class="axis-group">
                     <h3>Z Axis</h3>
-                    <button onclick="sendMove('z', 1)">Z +</button>
-                    <button onclick="sendMove('z', -1)">Z -</button>
+                    <button onclick="sendMove('z', 10)">Z +</button>
+                    <button onclick="sendMove('z', -10)">Z -</button>
                 </div>
-
+                <script>
+                    function sendMove(axis, amount) {
+                        fetch("/increase_coords", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ axis: axis, amount: amount })
+                        })
+                        .then(res => res.json())
+                        .then(data => {
+                            console.log("Updated position:", data);
+                        });
+                    }
+                </script>
             </div>
         </div>
 
@@ -64,24 +76,24 @@
 
     <script>
         document.getElementById("coordForm").addEventListener("submit", function(e) {
-        e.preventDefault(); // Stops page reload
+            e.preventDefault(); // Stops page reload
 
-        const formData = new FormData(this);
+            const formData = new FormData(this);
 
-        // Convert form data to a JSON object
-        const data = Object.fromEntries(formData.entries());
+            // Convert form data to a JSON object
+            const data = Object.fromEntries(formData.entries());
 
-        fetch("/send_coords", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(data)
-        })
-        .then(res => res.json())
-        .then(response => {
-            console.log("Arm moved:", response);
-        })
-        .catch(err => console.error("Error:", err));
-    });
+            fetch("/send_coords", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(data)
+            })
+            .then(res => res.json())
+            .then(response => {
+                console.log("Arm moved:", response);
+            })
+            .catch(err => console.error("Error:", err));
+        });
     </script>
 </body>
 </html>
