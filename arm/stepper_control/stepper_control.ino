@@ -19,6 +19,7 @@
 #define Y_LIMIT_SWITCH_PIN 10
 #define Z_LIMIT_SWITCH_PIN 11
 
+#define FAN_ENABLE_PIN 17
 
 AccelStepper motorX(1, MOTOR_X_STEP_PIN, MOTOR_X_DIR_PIN);
 AccelStepper motorY(1, MOTOR_Y_STEP_PIN, MOTOR_Y_DIR_PIN);
@@ -98,6 +99,10 @@ void setup() {
   pinMode(X_LIMIT_SWITCH_PIN, INPUT_PULLUP);
   pinMode(Y_LIMIT_SWITCH_PIN, INPUT_PULLUP);
   pinMode(Z_LIMIT_SWITCH_PIN, INPUT_PULLUP);
+
+  pinMode(FAN_ENABLE_PIN, OUTPUT);
+
+  digitalWrite(FAN_ENABLE_PIN, LOW);
 
   motorX.setEnablePin(MOTOR_ENABLE_PIN);
   motorX.setPinsInverted(false, false, true);

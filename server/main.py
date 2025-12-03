@@ -48,6 +48,10 @@ def handle_increase_coords(data):
     else:
         emit('coords_updated', {"status": "ok", "position": current_pos})
 
+@socketio.on('received_data')
+def handle_received_data(data):
+    print(data['data'])
+
 if __name__ == "__main__":
     comms = comms.Comms()
     socketio.run(app, port=5000) 

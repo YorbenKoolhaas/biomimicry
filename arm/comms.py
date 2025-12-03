@@ -1,6 +1,7 @@
 from serial import Serial
 from arm.inv_kinemetics import calculate_angles
 import os
+from flask_socketio import emit
 
 
 class Comms:
@@ -16,10 +17,7 @@ class Comms:
         self.SER.reset_input_buffer()
         
     def move_arm(self, x: float | int, y: float | int, z: float | int) -> bool:
-        """Takes in angles and sends them to the arm via serial communication.
-        
-        ser: Serial object representing the serial connection to the arm.
-        angles: A tuple of four integers representing the angles for the arm's joints.
+        """Takes in coordinates and sends them to the arm via serial communication.
 
         Returns True if the command was sent successfully."""
         
@@ -40,6 +38,6 @@ class Comms:
         while True:
             if self.SER.in_waiting > 0:
                 line = self.SER.readline().decode('utf-8').rstrip()
-                print(line)
+                emit("received_data", {"data": line})
 
     
