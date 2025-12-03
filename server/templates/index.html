@@ -16,12 +16,13 @@
             <h2>Set Coordinates</h2>
             <form id="coordForm">
                 <div class="coord-grid">
-                    <label>X <input name="x" type="number" step="1" value="0"></label>
-                    <label>Y <input name="y" type="number" step="1" value="0"></label>
-                    <label>Z <input name="z" type="number" step="1" value="0"></label>
+                    <label>X <input id="x" type="number" step="10" value="150"></label>
+                    <label>Y <input id="y" type="number" step="10" value="150"></label>
+                    <label>Z <input id="z" type="number" step="10" value="0"></label>
                 </div>
                 <button class="submit-btn" type="submit">Send Coordinates</button>
             </form>
+            <p id="status"></p>
         </div>
 
         <!-- Incremental Movement Section -->
@@ -31,34 +32,21 @@
 
                 <div class="axis-group">
                     <h3>X Axis</h3>
-                    <button onclick="sendMove('x', 10)">X +</button>
-                    <button onclick="sendMove('x', -10)">X -</button>
+                    <button onclick="increaseCoords('x', 10)">X +</button>
+                    <button onclick="increaseCoords('x', -10)">X -</button>
                 </div>
 
                 <div class="axis-group">
                     <h3>Y Axis</h3>
-                    <button onclick="sendMove('y', 10)">Y +</button>
-                    <button onclick="sendMove('y', -10)">Y -</button>
+                    <button onclick="increaseCoords('y', 10)">Y +</button>
+                    <button onclick="increaseCoords('y', -10)">Y -</button>
                 </div>
 
                 <div class="axis-group">
                     <h3>Z Axis</h3>
-                    <button onclick="sendMove('z', 10)">Z +</button>
-                    <button onclick="sendMove('z', -10)">Z -</button>
+                    <button onclick="increaseCoords('z', 10)">Z +</button>
+                    <button onclick="increaseCoords('z', -10)">Z -</button>
                 </div>
-                <script>
-                    function sendMove(axis, amount) {
-                        fetch("/increase_coords", {
-                            method: "POST",
-                            headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify({ axis: axis, amount: amount })
-                        })
-                        .then(res => res.json())
-                        .then(data => {
-                            console.log("Updated position:", data);
-                        });
-                    }
-                </script>
             </div>
         </div>
 
@@ -74,25 +62,36 @@
 
     </div>
 
+    <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
     <script>
-        document.getElementById("coordForm").addEventListener("submit", function(e) {
-            e.preventDefault(); // Stops page reload
+        const socket = io();
 
-            const formData = new FormData(this);
+        document.getElementById("coordForm").addEventListener("submit", (event) => {
+            event.preventDefault(); // prevents page reload
+            sendCoords();
+        });
 
-            // Convert form data to a JSON object
-            const data = Object.fromEntries(formData.entries());
+        function sendCoords() {
+            const x = document.getElementById("x").value;
+            const y = document.getElementById("y").value;
+            const z = document.getElementById("z").value;
 
-            fetch("/send_coords", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(data)
-            })
-            .then(res => res.json())
-            .then(response => {
-                console.log("Arm moved:", response);
-            })
-            .catch(err => console.error("Error:", err));
+            socket.emit('send_coords', { x, y, z });
+        }
+
+        function increaseCoords(axis, amount) {
+            socket.emit('increase_coords', { axis, amount });
+        }
+
+        socket.on("coords_updated", (pos) => {
+        document.getElementById("x").value = pos.x;
+        document.getElementById("y").value = pos.y;
+        document.getElementById("z").value = pos.z;
+        document.getElementById("status").innerText = "Position updated.";
+        });
+
+        socket.on("error_msg", (msg) => {
+            document.getElementById("status").innerText = "Error: " + msg;
         });
     </script>
 </body>
