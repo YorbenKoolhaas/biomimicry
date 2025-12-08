@@ -1,4 +1,5 @@
 from flask_socketio import SocketIO, emit
+import threading
 from flask import Flask, render_template
 import os
 import sys
@@ -52,9 +53,17 @@ def handle_increase_coords(data):
 def handle_received_data(data):
     print(data['data'])
 
+@socketio.on('arm_in_position')
+def handle_arm_in_position(data):
+    
+
 if __name__ == "__main__":
     comms = comms.Comms()
-    socketio.run(app, port=5000) 
+    threads = []
+    threads.append(threading.Thread(target=comms.receive_data))
+    threads.append(threading.Thread(target=socketio.run, args=(app, ), kwargs={"port": 5000}))
 
+    for thread in threads:
+        thread.start()
 
 

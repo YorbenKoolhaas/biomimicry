@@ -1,6 +1,8 @@
+// Controls for stepper motors of the robotic arm
+
 #include <AccelStepper.h>
 
-// Voor de Arduino Uno + CNC shield V3
+// for Arduino Uno + CNC shield V3
 #define MOTOR_ENABLE_PIN 8
 
 #define MOTOR_X_STEP_PIN 2
@@ -21,11 +23,13 @@
 
 #define FAN_ENABLE_PIN 17
 
+// Define stepper motor objects
 AccelStepper motorX(1, MOTOR_X_STEP_PIN, MOTOR_X_DIR_PIN);
 AccelStepper motorY(1, MOTOR_Y_STEP_PIN, MOTOR_Y_DIR_PIN);
 AccelStepper motorZ(1, MOTOR_Z_STEP_PIN, MOTOR_Z_DIR_PIN);
 AccelStepper motorA(1, MOTOR_A_STEP_PIN, MOTOR_A_DIR_PIN);
 
+// Define stepper motor constants
 const float step_size = 0.9;
 const int steps_full_rotation = 360 / step_size;
 const int base_speed = 500;
@@ -49,6 +53,10 @@ int move_all(float th1, float th2, float th3, float delta) {
 }
 
 void home_motors(int* max_motorX, int* max_motorY, int* max_motorZ) {
+  // Simple homing procedure
+  // Steps in one direction until limit switch is triggered
+  // Then steps back to find max range
+
   while (digitalRead(X_LIMIT_SWITCH_PIN) == HIGH) {
     motorX.setSpeed(-base_speed);
     motorX.runSpeed();
@@ -94,15 +102,16 @@ void home_motors(int* max_motorX, int* max_motorY, int* max_motorZ) {
 
 void setup() {
   Serial.begin(9600);
+
+  // Initialize pins
   pinMode(MOTOR_ENABLE_PIN, OUTPUT);
+  pinMode(FAN_ENABLE_PIN, OUTPUT);
 
   pinMode(X_LIMIT_SWITCH_PIN, INPUT_PULLUP);
   pinMode(Y_LIMIT_SWITCH_PIN, INPUT_PULLUP);
   pinMode(Z_LIMIT_SWITCH_PIN, INPUT_PULLUP);
 
-  pinMode(FAN_ENABLE_PIN, OUTPUT);
-
-  digitalWrite(FAN_ENABLE_PIN, LOW);
+  digitalWrite(FAN_ENABLE_PIN, HIGH); // Enable fan
 
   motorX.setEnablePin(MOTOR_ENABLE_PIN);
   motorX.setPinsInverted(false, false, true);
