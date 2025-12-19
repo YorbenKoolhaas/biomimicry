@@ -52,10 +52,23 @@ def handle_increase_coords(data):
 @socketio.on('received_data')
 def handle_received_data(data):
     print(data['data'])
+    if data == "arm in position":
+        emit('arm_in_position', {"status": "ok"})
 
 @socketio.on('arm_in_position')
 def handle_arm_in_position(data):
-    
+    pass
+
+@socketio.on('move_scissors')
+def handle_move_scissors(data):
+    amount = float(data['amount'])
+
+    succes = comms.move_scissors(amount)
+
+    if not succes:
+        emit('error_msg', {"status": "error", "message": "Failed to move scissors"})
+    else:
+        emit('scissors_moved', {"status": "ok"})
 
 if __name__ == "__main__":
     comms = comms.Comms()

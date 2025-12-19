@@ -36,17 +36,22 @@ const int base_speed = 500;
 const int max_speed = 1000;
 const int accel_speed = 300;
 
+const int motor_x_gear_ratio = 20; // 20:1
+const int motor_y_gear_ratio = 20; // 20:1
+const int motor_z_gear_ratio = 10; // 10:1
+const int motor_a_gear_ratio = 1;  // Direct drive
+
 int move_all(float th1, float th2, float th3, float delta) {
-  motorX.moveTo(th1/step_size);
+  motorX.moveTo((th1 * motor_x_gear_ratio)/step_size);
   motorX.runToPosition();
   
-  motorY.moveTo(th2/step_size);
+  motorY.moveTo((th2 * motor_y_gear_ratio)/step_size);
   motorY.runToPosition();
   
-  motorZ.moveTo(th3/step_size);
+  motorZ.moveTo((th3 * motor_z_gear_ratio)/step_size);
   motorZ.runToPosition();
 
-  motorA.moveTo(delta/step_size);
+  motorA.moveTo((delta * motor_a_gear_ratio)/step_size);
   motorA.runToPosition();
   
   return 0;
@@ -62,7 +67,9 @@ void home_motors(int* max_motorX, int* max_motorY, int* max_motorZ) {
     motorX.runSpeed();
   }
   motorX.setCurrentPosition(0);
-  delay(50);
+  motorX.moveTo(10);
+  motorX.runToPosition();
+  delay(100);
   int i = 0;
   while (digitalRead(X_LIMIT_SWITCH_PIN) == HIGH) {
     motorX.setSpeed(base_speed);
@@ -76,12 +83,14 @@ void home_motors(int* max_motorX, int* max_motorY, int* max_motorZ) {
     motorY.runSpeed();
   }
   motorY.setCurrentPosition(0);
-  delay(50);
+  motorY.moveTo(10);
+  motorY.runToPosition();
+  delay(100);
   int j = 0;
   while (digitalRead(Y_LIMIT_SWITCH_PIN) == HIGH) {
-    j += 5;
-    motorX.moveTo(j);
-    motorX.runToPosition();
+    motorX.setSpeed(base_speed);
+    motorX.runSpeed();
+    j++;
   }
   *max_motorY = j;
   
@@ -90,12 +99,14 @@ void home_motors(int* max_motorX, int* max_motorY, int* max_motorZ) {
     motorZ.runSpeed();
   }
   motorZ.setCurrentPosition(0);
-  delay(50);
+  motorZ.moveTo(10);
+  motorZ.runToPosition();
+  delay(100);
   int k = 0;
   while (digitalRead(Z_LIMIT_SWITCH_PIN) == HIGH) {
-    k += 5;
-    motorX.moveTo(k);
-    motorX.runToPosition();
+    motorX.setSpeed(base_speed);
+    motorX.runSpeed();
+    k++;
   }
   *max_motorZ = k;
 }

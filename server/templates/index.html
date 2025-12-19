@@ -49,6 +49,17 @@
                 </div>
             </div>
         </div>
+        
+        <div class="card">
+            <h2>Move scissors</h2>
+            <form id="scissorsForm">
+                <div class="coord-grid">
+                    <label>Extend <input id="amount" type="number" step="1" value="10"></label>
+                </div>
+                <button class="submit-btn" type="submit">Send scissors</button>
+            </form>
+            <p id="status"></p>
+        </div>
 
         <!-- Future Video Panels -->
         <div class="card video-area">
@@ -71,6 +82,11 @@
             sendCoords();
         });
 
+        document.getElementById("scissorsForm").addEventListener("submit", (event) => {
+            event.preventDefault(); // prevents page reload
+            sendScissors();
+        });
+
         function sendCoords() {
             const x = document.getElementById("x").value;
             const y = document.getElementById("y").value;
@@ -81,6 +97,12 @@
 
         function increaseCoords(axis, amount) {
             socket.emit('increase_coords', { axis, amount });
+        }
+
+        function sendScissors() {
+            const amount = document.getElementById("amount").value;
+
+            socket.emit('move_scissors', { amount });
         }
 
         socket.on("coords_updated", (pos) => {

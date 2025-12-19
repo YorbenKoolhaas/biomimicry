@@ -111,7 +111,7 @@ def draw_robot(solution, L1=200, L2=200, L3=50):
 
 
 if __name__ == "__main__":
-    x = 0
+    x = 200
     y = 150
     z = -200
 

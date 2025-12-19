@@ -1,24 +1,25 @@
-#include <Wire.h>
-#include <Adafruit_MotorShield.h>
-#include "utility/Adafruit_PWMServoDriver.h"
+#include <Servo.h>
+#include <AFMotor.h>
 
 #define PUMP_ONE_PIN 14
 #define PUMP_TWO_PIN 15
 
-int position = 0; // position of stepper motor in steps
+int pos_stepper = 0; // position of stepper motor in steps
+int pos_servo = 0;   // position of servo in degrees
 
-Adafruit_MotorShield AFMS = Adafruit_MotorShield();
-Adafruit_StepperMotor *stepper_scissors = AFMS.getStepper(200, 1); // 200 steps per revolution. Using port 1 (M1 & M2) for the stepper
-
-Adafruit_ServoMotor *servo_scissors = AFMS.getServo(1); // Using port 1 for the servo
+AF_Stepper stepper_scissors(200, 1);
+Servo servo_scissors;
 
 void setup() {
   Serial.begin(9600);
 
-  stepper_scissors->setSpeed(10); // 10 rpm
+  stepper_scissors.setSpeed(10);
+
+  servo_scissors.attach(10);
 
   pinMode(PUMP_ONE_PIN, OUTPUT);
   pinMode(PUMP_TWO_PIN, OUTPUT);
+  close_scissors();
 }
 
 int pump_gripper(int time_ms, bool direction) {
@@ -37,7 +38,7 @@ int pump_gripper(int time_ms, bool direction) {
 
 void move_scissors(int amount) {
   // Calculation for number of steps to move
-  int delta = amount - position;
+  int delta = amount - pos_stepper;
   int steps = delta; // Assuming 1 unit of amount equals 1 step
 
   if (steps > 0) {
@@ -45,13 +46,14 @@ void move_scissors(int amount) {
   } else if (steps < 0) {
     stepper_scissors->step(-steps, BACKWARD, MICROSTEP);
   }
-  position = amount;
+  pos_stepper = amount;
 }
 
 void close_scissors() {
   // Close scissors using servo
-  servo_scissors->write(0); // Assuming 0 degrees is closed position
+  servo_scissors.write(180);
   delay(500); // Wait for servo to move
+  servo_scissors.write(0);
 }
 
 int move_and_close_scissors(int amount) {
