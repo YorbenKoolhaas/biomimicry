@@ -1,4 +1,5 @@
-# This script contains the connection with the Raspberry Pi 5, performs the object detection + depth estimation +
+# This script should be run on a laptop, in combination with pi_script.py which has to be run on a Raspberry Pi 5
+# This code contains the connection with the Raspberry Pi 5, performs the object detection + depth estimation +
 # conversion to robot base frame coordinates on the images received from the Pi, and finally sends the data back to 
 # the Pi
 
