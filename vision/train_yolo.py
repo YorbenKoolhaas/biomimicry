@@ -7,7 +7,7 @@ model = YOLO("yolov8n.pt")
 if __name__ == "__main__":
     model = YOLO("yolov8n.pt")
     results = model.train(
-        data="C:\\Users\\Riko\\Downloads\\GSD\\GSD-YOLO\\data.yaml",
+        data="C:\\Users\\Riko\\Downloads\\GSD\\GSD-YOLO\\data.yaml", #change path to your data.yaml location
         epochs=100,
         imgsz=640,
         batch=8,
