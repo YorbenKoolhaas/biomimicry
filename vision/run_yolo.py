@@ -5,7 +5,7 @@ from ultralytics import YOLO
 # path to your trained model
 model = YOLO("C:\\Users\\Riko\\PycharmProjects\\GripNSnip\\runs\\detect\\train17\\weights\\best.pt")
 
-# run detection on the downloaded video and save results (boxes drawn)
+# run detection on a strawberry image
 results = model.predict(source="strawberry3.png", save=True, conf=0.35)
 
 # output written to runs/detect/predictN/ by default
@@ -35,7 +35,7 @@ def generate_unique_filename(directory, base_name, extension):
             return filename
         counter += 1
 
-# define the output directory and base name
+# define the output directory and base name for the bounding box coordinates
 output_directory = "C:\\Users\\Riko\\PycharmProjects\\GripNSnip\\runs\\detect\\bounding_box_coordinates"
 base_name = "bounding_boxes"
 
@@ -47,5 +47,6 @@ with open(output_file_path, "w") as file:
     for i, ((x1, y1, x2, y2), (cx, cy)) in enumerate(zip(bounding_boxes, centers)):
         file.write(f"Bounding Box {i+1}: ({x1:.2f}, {y1:.2f}, {x2:.2f}, {y2:.2f})\n")
         file.write(f"Center: ({cx:.2f}, {cy:.2f})\n\n")
+
 
 print(f"Bounding box coordinates have been written to {output_file_path}")
