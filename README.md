@@ -33,7 +33,11 @@ Now that symlinks are created you can proceed to the user instructions
 ---
 
 ## User Instructions
-To use the robotic arm with the webinterface, simply run `server/main.py`. This will run on [`https://127.0.0.1:5000`](https://127.0.0.1:5000)
+**Before we get into running the arm, another important note. Make sure the stepper motor cables and limit switch cables are firmly connected to the shield.**
+**Do not operate the arm if a stepper motor is not connected to a motor driver. This will fry the motor driver**
+
+To use the robotic arm with the web-socket, simply run `server/main.py`. This will run on [`https://127.0.0.1:5000`](https://127.0.0.1:5000)
+Wait for the homing process to finish before you start using the interface.
 
 ![Picture of the user interface](/server/pictures/ui.png "User Interface")
 
