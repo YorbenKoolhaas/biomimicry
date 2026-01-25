@@ -1,15 +1,16 @@
+from flask import Flask
 from flask_socketio import SocketIO, emit
 import threading
-from flask import Flask, render_template
+from flask import render_template
 import os
 import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 import arm.comms as comms
 
-current_pos = {"x": 0, "y": 0, "z": 0}
-
 app = Flask(__name__)
 socketio = SocketIO(app, cors_allowed_origins="*")
+
+current_pos = {"x": 0, "y": 0, "z": 0}
 
 @app.route('/')
 def home():
@@ -26,6 +27,8 @@ def handle_send_coords(data):
     current_pos["x"] = x
     current_pos["y"] = y
     current_pos["z"] = z
+
+    print(f"Received coordinates: x={x}, y={y}, z={z}")
     
     succes = comms.move_arm(x, y, z)
     if not succes:
@@ -70,11 +73,16 @@ def handle_move_scissors(data):
     else:
         emit('scissors_moved', {"status": "ok"})
 
+@socketio.on('error_msg')
+def handle_error(data):
+    print(data['message'])
+
+
 if __name__ == "__main__":
     comms = comms.Comms()
     threads = []
     threads.append(threading.Thread(target=comms.receive_data))
-    threads.append(threading.Thread(target=socketio.run, args=(app, ), kwargs={"port": 5000}))
+    threads.append(threading.Thread(target=socketio.run, args=(app, ), kwargs={"port": 5000, "debug": False}))
 
     for thread in threads:
         thread.start()

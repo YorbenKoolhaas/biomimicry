@@ -28,15 +28,15 @@ def calculate_angles(
 
     # Subtract tool length
     r = np.sqrt(x*x + z*z) - L3
-    px, py = r, y
+    px = r
 
     # 2-link Inverse Kinematics
-    D = (px*px + py*py - L1*L1 - L2*L2) / (2 * L1 * L2)
+    D = (px*px + y*y - L1*L1 - L2*L2) / (2 * L1 * L2)
     D = np.clip(D, -1.0, 1.0)
 
     theta2 = -np.arccos(D) # elbow up
 
-    theta1 = np.arctan2(py, px) - np.arctan2(
+    theta1 = np.arctan2(y, px) - np.arctan2(
         L2 * np.sin(theta2),
         L1 + L2 * np.cos(theta2)
     )
@@ -112,8 +112,8 @@ def draw_robot(solution, L1=200, L2=200, L3=50):
 
 if __name__ == "__main__":
     x = 200
-    y = 150
-    z = -200
+    y = 200
+    z = 0
 
     solution = calculate_angles(x, y, z, L1=200, L2=200, L3=50, psi=0)
     print(solution)

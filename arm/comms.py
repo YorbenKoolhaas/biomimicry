@@ -25,7 +25,9 @@ class Comms:
         if not angles["valid"]:
             return False
         
-        command = f"MOVE {angles["theta1"]:.0f} {angles["theta2"]:.0f} {angles["theta3"]:.0f} {angles["delta"]:.0f}\n"
+        # Send command to arm
+        # angles are multiplied by 100 to convert to integer representation for serial communication
+        command = f"MOVE {int(angles["theta1"]*100)} {int(angles["theta2"]*100)} {int(angles["theta3"]*100)} {int(angles["delta"]*100)}\n"
         self.SER_ARM.write(command.encode('utf-8'))
 
         return True
@@ -50,10 +52,10 @@ class Comms:
         while True:
             if self.SER_ARM.in_waiting > 0:
                 line = self.SER_ARM.readline().decode('utf-8').rstrip()
-                emit("received_data", {"data": line})
+                # emit("received_data", {"data": line})
             
             if self.SER_END.in_waiting > 0:
                 line = self.SER_END.readline().decode('utf-8').rstrip()
-                emit("received_data", {"data": line})
+                # emit("received_data", {"data": line})
 
     
