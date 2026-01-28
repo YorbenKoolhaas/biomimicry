@@ -31,10 +31,10 @@ def handle_send_coords(data):
     print(f"Received coordinates: x={x}, y={y}, z={z}")
     
     succes = comms.move_arm(x, y, z)
-    if not succes:
-        emit('error_msg', {"status": "error", "message": "Invalid coordinates"})
-    else:
+    if succes:
         emit('coords_updated', {"status": "ok", "position": current_pos})
+    else:
+        emit('error_msg', {"status": "error", "message": "Invalid coordinates"})
 
 @socketio.on('increase_coords')
 def handle_increase_coords(data):
@@ -47,10 +47,10 @@ def handle_increase_coords(data):
 
     succes = comms.move_arm(current_pos["x"], current_pos["y"], current_pos["z"])
 
-    if not succes:
-        emit('error_msg', {"status": "error", "message": "Invalid coordinates"})
-    else:
+    if succes:
         emit('coords_updated', {"status": "ok", "position": current_pos})
+    else:
+        emit('error_msg', {"status": "error", "message": "Invalid coordinates"})
 
 @socketio.on('received_data')
 def handle_received_data(data):
@@ -81,8 +81,8 @@ def handle_error(data):
 if __name__ == "__main__":
     comms = comms.Comms()
     threads = []
-    threads.append(threading.Thread(target=comms.receive_data))
     threads.append(threading.Thread(target=socketio.run, args=(app, ), kwargs={"port": 5000, "debug": False}))
+    threads.append(threading.Thread(target=comms.receive_data))
 
     for thread in threads:
         thread.start()

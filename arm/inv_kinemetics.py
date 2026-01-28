@@ -3,8 +3,8 @@ import matplotlib.pyplot as plt
 
 def calculate_angles(
     x: float | int, y: float | int, z: float | int,
-    L1: int=200, L2: int=200, L3: int=50, psi: int=0,
-    limits: dict[str, tuple[int | float]]= {"theta1": (0, 135), "theta2": (-135, 0)}
+    L1: int=180, L2: int=180, L3: int=70, psi: int=0,
+    limits: dict[str, tuple[int | float]]= {"theta1": (34.6, 135), "theta2": (-163, 0)}
 ) -> dict[str, int | float]:
     """
     Elbow-up only IK for a 3DOF arm + base.
@@ -57,17 +57,20 @@ def calculate_angles(
     }
 
     # Joint limit enforcement
-    if limits:
-        for j in ["theta1", "theta2", "theta3", "delta"]:
-            if j in limits:
-                lo, hi = limits[j]
-                if not (lo <= sol[j] <= hi):
-                    sol["valid"] = False
+    # if limits:
+    #     for j in ["theta1", "theta2", "theta3", "delta"]:
+    #         if j in limits:
+    #             lo, hi = limits[j]
+    #             if not (lo <= sol[j] <= hi):
+    #                 sol["valid"] = False
 
+    sol["valid"] = True
+
+    print(f"IK Solution: {sol}")
     return sol
 
 
-def draw_robot(solution, L1=200, L2=200, L3=50):
+def draw_robot(solution, L1=180, L2=180, L3=70):
     theta1 = np.radians(solution["theta1"])
     theta2 = np.radians(solution["theta2"])
     theta3 = np.radians(solution["theta3"])
@@ -111,10 +114,10 @@ def draw_robot(solution, L1=200, L2=200, L3=50):
 
 
 if __name__ == "__main__":
-    x = 200
-    y = 200
+    x = 80
+    y = 150
     z = 0
 
-    solution = calculate_angles(x, y, z, L1=200, L2=200, L3=50, psi=0)
+    solution = calculate_angles(x, y, z, L1=180, L2=180, L3=70, psi=0)
     print(solution)
     draw_robot(solution)

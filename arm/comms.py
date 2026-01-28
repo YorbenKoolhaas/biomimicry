@@ -1,7 +1,6 @@
 from serial import Serial
 from arm.inv_kinemetics import calculate_angles
 import os
-from flask_socketio import emit
 
 
 class Comms:
@@ -10,8 +9,8 @@ class Comms:
             self.SER_ARM = Serial("/dev/arduino_arm", 9600, timeout=1)
             self.SER_ARM.reset_input_buffer()
 
-            self.SER_END = Serial("/dev/arduino_gripnsnip", 9600, timeout=1)
-            self.SER_END.reset_input_buffer()
+            # self.SER_END = Serial("/dev/arduino_gripnsnip", 9600, timeout=1)
+            # self.SER_END.reset_input_buffer()
         except Exception as e:
             print(f"Error initializing serial communication: {e}")
             os._exit(1)
@@ -28,6 +27,7 @@ class Comms:
         # Send command to arm
         # angles are multiplied by 100 to convert to integer representation for serial communication
         command = f"MOVE {int(angles["theta1"]*100)} {int(angles["theta2"]*100)} {int(angles["theta3"]*100)} {int(angles["delta"]*100)}\n"
+        print(command)
         self.SER_ARM.write(command.encode('utf-8'))
 
         return True
@@ -39,8 +39,8 @@ class Comms:
         
         Closes the scissors when destination is reached."""
 
-        command = f"SCISSORS {amount:.0f}\n"
-        self.SER_END.write(command.encode('utf-8'))
+        command = f"SCISSORS {int(amount*100)}\n"
+        # self.SER_END.write(command.encode('utf-8'))
 
         return True
     
@@ -52,10 +52,11 @@ class Comms:
         while True:
             if self.SER_ARM.in_waiting > 0:
                 line = self.SER_ARM.readline().decode('utf-8').rstrip()
+                print(f"Arm data: {line}")
                 # emit("received_data", {"data": line})
             
-            if self.SER_END.in_waiting > 0:
-                line = self.SER_END.readline().decode('utf-8').rstrip()
+            # if self.SER_END.in_waiting > 0:
+            #     line = self.SER_END.readline().decode('utf-8').rstrip()
                 # emit("received_data", {"data": line})
 
     

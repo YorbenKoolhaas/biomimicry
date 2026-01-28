@@ -38,10 +38,10 @@ const int accel_speed = 300;
 
 const float motor_x_gear_ratio = 19.2; // 19.2:1
 const float motor_y_gear_ratio = 19.2; // 19.2:1
-const float motor_z_gear_ratio = 4; // 12:48
+const float motor_z_gear_ratio = 4; // 48:12
 const float motor_a_gear_ratio = 1;  // Direct drive
 
-const float home_position[3] = {-20, 40, 100};
+const float home_position[3] = {90, -126, 25};
 
 int move_all(float th1, float th2, float th3, float delta) {
   motorX.moveTo((th1 * motor_x_gear_ratio)/step_size);
@@ -64,33 +64,27 @@ void home_motors() {
   // Steps in one direction until limit switch is triggered
   // Then moves into home position
 
-//  if (digitalRead(X_LIMIT_SWITCH_PIN) == LOW) {
-    while (digitalRead(X_LIMIT_SWITCH_PIN) == HIGH) {
-      motorX.setSpeed(-base_speed);
-      motorX.runSpeed();
-    }
-//  }
-  motorX.setCurrentPosition(0);
+  while (digitalRead(X_LIMIT_SWITCH_PIN) == HIGH) {
+    motorX.setSpeed(base_speed);
+    motorX.runSpeed();
+  }
+  motorX.setCurrentPosition(3102); // (180 - 34.6) 145.4 degrees * gear_ratio / step_size
   motorX.moveTo(home_position[0] * motor_x_gear_ratio / step_size);
   motorX.runToPosition();
 
-//  if (digitalRead(Y_LIMIT_SWITCH_PIN) == LOW) {
-    while (digitalRead(Y_LIMIT_SWITCH_PIN) == HIGH) {
-      motorY.setSpeed(-base_speed);
-      motorY.runSpeed();
-    }
-//  }
-  motorY.setCurrentPosition(0);
+  while (digitalRead(Y_LIMIT_SWITCH_PIN) == HIGH) {
+    motorY.setSpeed(-base_speed);
+    motorY.runSpeed();
+  }
+  motorY.setCurrentPosition(-3473); // (17.2 - 180) -162.8 degrees * gear_ratio / step_size
   motorY.moveTo(home_position[1] * motor_y_gear_ratio / step_size);
   motorY.runToPosition();
 
-//  if (digitalRead(Z_LIMIT_SWITCH_PIN) == LOW) {
-    while (digitalRead(Z_LIMIT_SWITCH_PIN) == HIGH) {
-      motorZ.setSpeed(-base_speed);
-      motorZ.runSpeed();
-    }
-//  }
-  motorZ.setCurrentPosition(0);
+  while (digitalRead(Z_LIMIT_SWITCH_PIN) == HIGH) {
+    motorZ.setSpeed(base_speed);
+    motorZ.runSpeed();
+  }
+  motorZ.setCurrentPosition(524); // 117.8 degrees * gear_ratio / step_size
   motorZ.moveTo(home_position[2] * motor_z_gear_ratio / step_size);
   motorZ.runToPosition();
 }
@@ -106,12 +100,10 @@ void setup() {
   pinMode(Y_LIMIT_SWITCH_PIN, INPUT_PULLUP);
   pinMode(Z_LIMIT_SWITCH_PIN, INPUT_PULLUP);
 
-  pinMode(MOTOR_X_DIR_PIN, OUTPUT);
-
   digitalWrite(FAN_ENABLE_PIN, HIGH); // Enable fan
 
   motorX.setEnablePin(MOTOR_ENABLE_PIN);
-  motorX.setPinsInverted(false, false, true); // dir invert: false, step invert: false, enable invert: true
+  motorX.setPinsInverted(true, false, true); // dir invert: true, step invert: false, enable invert: true
   motorX.setAcceleration(accel_speed);
   motorX.setMaxSpeed(max_speed);
   motorX.setSpeed(base_speed);
@@ -127,7 +119,7 @@ void setup() {
   motorY.enableOutputs();
 
   motorZ.setEnablePin(MOTOR_ENABLE_PIN);
-  motorZ.setPinsInverted(false, false, true); // dir invert: false, step invert: false, enable invert: true
+  motorZ.setPinsInverted(true, false, true); // dir invert: false, step invert: false, enable invert: true
   motorZ.setAcceleration(accel_speed);
   motorZ.setMaxSpeed(max_speed);
   motorZ.setSpeed(base_speed);
@@ -150,13 +142,16 @@ void loop() {
     String command = Serial.readStringUntil('\n');
     command.trim();
     if (command.startsWith("MOVE ")) {
-      
-      float th1, th2, th3, delta;
-      sscanf(command.c_str(), "MOVE %d %d %d %d", &th1, &th2, &th3, &delta);
-      th1 = th1/100;
-      th2 = th2/100;
-      th3 = th3/100;
-      delta = delta/100;
+
+      // read in angles as int
+      int th1_read, th2_read, th3_read, delta_read;
+      sscanf(command.c_str(), "MOVE %d %d %d %d", &th1_read, &th2_read, &th3_read, &delta_read);
+
+      // convert back to floats
+      float th1 = th1_read/100;
+      float th2 = th2_read/100;
+      float th3 = th3_read/100;
+      float delta = delta_read/100;
       
       int result = move_all(th1, th2, th3, delta);
       if (result == 0) {

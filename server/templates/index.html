@@ -93,6 +93,7 @@
             const z = document.getElementById("z").value;
 
             socket.emit('send_coords', { x, y, z });
+            console.log(`Sending coords: x=${x}, y=${y}, z=${z}`);
         }
 
         function increaseCoords(axis, amount) {
