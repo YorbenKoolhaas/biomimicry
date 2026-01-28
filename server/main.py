@@ -6,6 +6,7 @@ import os
 import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 import arm.comms as comms
+import vision.pi_script as vision
 
 app = Flask(__name__)
 socketio = SocketIO(app, cors_allowed_origins="*")
@@ -15,6 +16,17 @@ current_pos = {"x": 0, "y": 0, "z": 0}
 @app.route('/')
 def home():
     return render_template('index.html')
+
+@socketio.on('vision_coords')
+def handle_vision_coords(data):
+    coords = vision.main()
+    next(coords)
+
+    current_pos["x"] = coords[0]
+    current_pos["y"] = coords[1]
+    current_pos["z"] = coords[2]
+
+    emit('send_coords', {"x": coords[0], "y": coords[1], "z": coords[2]})
 
 @socketio.on('send_coords')
 def handle_send_coords(data):

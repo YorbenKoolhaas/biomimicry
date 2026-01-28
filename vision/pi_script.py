@@ -55,87 +55,87 @@ print("🎥 Stereo cameras running")
 print("👉 Press ENTER to capture 1 frame | q to quit")
 
 
-# MAIN LOOP
-while True:
-    retL, frameL = capL.read()
-    retR, frameR = capR.read()
+def main():
 
-    if not retL or not retR:
-        print("❌ Camera read failed")
-        break
+    # MAIN LOOP
+    while True:
+        retL, frameL = capL.read()
+        retR, frameR = capR.read()
 
-    # small and fast preview
-    preview = cv2.hconcat([
-        cv2.resize(frameL, (640, 360)),
-        cv2.resize(frameR, (640, 360))
-    ])
-    cv2.imshow("Stereo Preview", preview)
+        if not retL or not retR:
+            print("❌ Camera read failed")
+            break
 
-    key = cv2.waitKey(1)
+        # small and fast preview
+        preview = cv2.hconcat([
+            cv2.resize(frameL, (640, 360)),
+            cv2.resize(frameR, (640, 360))
+        ])
+        cv2.imshow("Stereo Preview", preview)
 
-    if key == ord("q"):
-        break
+        key = cv2.waitKey(1)
 
-    # ENTER → CAPTURE + SEND
-    if key == 13:
-        print("\n📸 Capturing frames...")
+        if key == ord("q"):
+            break
 
-        for i in range(CAPTURE_FRAMES):
-            retL, frameL = capL.read()
-            retR, frameR = capR.read()
+        # ENTER → CAPTURE + SEND
+        if key == 13:
+            print("\n📸 Capturing frames...")
 
-            if not retL or not retR:
-                continue
+            for i in range(CAPTURE_FRAMES):
+                retL, frameL = capL.read()
+                retR, frameR = capR.read()
 
-            _, left_png = cv2.imencode(".png", frameL)
-            _, right_png = cv2.imencode(".png", frameR)
+                if not retL or not retR:
+                    continue
 
-            meta = json.dumps({
-                "request_id": request_id,
-                "pair_id": i,
-                "left_name": f"left_{i:03d}.png",
-                "right_name": f"right_{i:03d}.png"
-            }).encode()
+                _, left_png = cv2.imencode(".png", frameL)
+                _, right_png = cv2.imencode(".png", frameR)
 
-            push.send_multipart([meta, left_png.tobytes(), right_png.tobytes()])
+                meta = json.dumps({
+                    "request_id": request_id,
+                    "pair_id": i,
+                    "left_name": f"left_{i:03d}.png",
+                    "right_name": f"right_{i:03d}.png"
+                }).encode()
 
-            print(f"📤 Sent pair {i}")
-            time.sleep(0.05)
+                push.send_multipart([meta, left_png.tobytes(), right_png.tobytes()])
 
-        print("⏳ Waiting for coordinates from laptop...")
+                print(f"📤 Sent pair {i}")
+                time.sleep(0.05)
 
-        # receive coordinates
-        while True:
-            coord_data = coord_pull.recv_json()
+            print("⏳ Waiting for coordinates from laptop...")
 
-            if coord_data.get("status") == "no_detection":
-                print("⚠️ No strawberry detected — press ENTER to try again\n")
-                break    
-            if coord_data.get("request_id") == request_id:
-                break
-            else:
-                print("⚠️ Discarded stale coordinate packet")
+            # receive coordinates
+            while True:
+                coord_data = coord_pull.recv_json()
 
-        print("✅ Coordinates received:")
-        print(coord_data)
+                if coord_data.get("status") == "no_detection":
+                    print("⚠️ No strawberry detected — press ENTER to try again\n")
+                    break    
+                if coord_data.get("request_id") == request_id:
+                    break
+                else:
+                    print("⚠️ Discarded stale coordinate packet")
 
-        # =============================
-        # TODO: ADD CODE THAT SENDS THE RECEIVED DATA TO ARDUINO
-        # =============================
-        # Example:
-        #
-        # corrected = websocket_correct(coord_data)
-        # send_to_arduino(corrected)
+            print("✅ Coordinates received:")
+            print(coord_data)
 
-        print("🚀 Handed off to robot pipeline\n")
+            yield coord_data
 
-#  cleanup
-capL.release()
-capR.release()
-cv2.destroyAllWindows()
-push.close()
-sync.close()
-coord_pull.close()
-ctx.term()
+            print("🚀 Handed off to robot pipeline\n")
 
-print("🛑 Pi sender stopped")
+
+if __name__ == "__main__":
+    main()
+
+    #  cleanup
+    capL.release()
+    capR.release()
+    cv2.destroyAllWindows()
+    push.close()
+    sync.close()
+    coord_pull.close()
+    ctx.term()
+
+    print("🛑 Pi sender stopped")

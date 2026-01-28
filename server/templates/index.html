@@ -69,6 +69,7 @@
                 <div class="video-box">Cam2 Feed</div>
                 <div class="video-box">YOLOv8 Detection?</div>
             </div>
+            <button class="submit-btn" onclick="increaseCoords('z', 10)">Z +</button>
         </div>
 
     </div>
@@ -93,7 +94,6 @@
             const z = document.getElementById("z").value;
 
             socket.emit('send_coords', { x, y, z });
-            console.log(`Sending coords: x=${x}, y=${y}, z=${z}`);
         }
 
         function increaseCoords(axis, amount) {
@@ -104,6 +104,10 @@
             const amount = document.getElementById("amount").value;
 
             socket.emit('move_scissors', { amount });
+        }
+
+        function trigger_vision() {
+            socket.emit('vision_coords', {});
         }
 
         socket.on("coords_updated", (pos) => {
