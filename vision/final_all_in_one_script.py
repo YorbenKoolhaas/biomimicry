@@ -33,7 +33,7 @@ EXPECTED_DISTANCE = 0.20  # meters
 MIN_DEPTH = 0.10
 MAX_DEPTH = 2.0
 
-CAPTURE_FRAMES = 1
+CAPTURE_FRAMES = 5
 batch_queue = queue.Queue()
 
 # zeromq config (LAPTOP → PI)
@@ -162,6 +162,31 @@ def estimate_roi_depth(depth_map, box):
 
     return float(np.median(valid)), 100.0 * len(valid) / roi.size
 
+def robust_depth_estimate(depth_list):
+    """
+    depth_list: list of (Z_m, coverage_pct)
+    Returns: (Z_final_m, coverage_avg) or (None, None)
+    """
+    if len(depth_list) == 0:
+        return None, None
+
+    Zs = np.array([d[0] for d in depth_list])
+    covs = np.array([d[1] for d in depth_list])
+
+    # discard insane outliers using median absolute deviation
+    med = np.median(Zs)
+    mad = np.median(np.abs(Zs - med)) + 1e-6
+    inliers = np.abs(Zs - med) < 2.5 * mad
+
+    Z_filtered = Zs[inliers]
+    cov_filtered = covs[inliers]
+
+    if len(Z_filtered) == 0:
+        return None, None
+
+    return float(np.median(Z_filtered)), float(np.mean(cov_filtered))
+
+
 # convert pixel + depth → camera-frame 3D point
 def pixel_to_camera_xyz(u, v, Z):
     fx = K_L[0, 0]
@@ -288,7 +313,6 @@ def main():
 
     frame_counter = 0
     image_counter = 0
-    detections = []
 
     # load YOLO model
     model = YOLO(MODEL_PATH)
@@ -313,43 +337,50 @@ def main():
     log_folder, log_id = create_log_folder(OUTPUT_DIR)
     csv_file, csv_writer = create_numbered_csv(log_folder, log_id)
     print(f"[INFO] Logging to folder: {log_folder}")
-    print("[INFO] Ready — waiting for ENTER on Pi")
+    print("[INFO] Ready — processing batches automatically when 5 images arrive")
 
-    # main loop over folder images
     try:
         while True:
+            # --------------------------------------------------
+            # Wait for next batch (5 frames from Pi)
+            # --------------------------------------------------
             if frame_counter == 0:
                 batch = first_batch
             else:
                 current_request_id, batch = batch_queue.get()
+
             frame_counter += 1
-            detections.clear()
-            batch_success = False
 
-            print(f"\n[INFO] Processing batch #{frame_counter}")
+            print(f"\n[INFO] Processing batch #{frame_counter} (frames={len(batch)})")
 
+            detections = []
+            depth_samples = []
+
+            # --------------------------------------------------
+            # Process ALL 5 frames
+            # --------------------------------------------------
             for left_path, right_path in batch:
                 frameL = cv2.imread(left_path)
                 frameR = cv2.imread(right_path)
 
                 if frameL is None or frameR is None:
-                    print(f"[WARNING] Could not read frames: {left_path}, {right_path}")
+                    print(f"[WARN] Could not read {left_path} / {right_path}")
                     continue
 
-                # resize and rectify
+                # Resize + rectify
                 frameL_s = cv2.resize(frameL, (w_s, h_s))
                 frameR_s = cv2.resize(frameR, (w_s, h_s))
 
                 rectL = cv2.remap(frameL_s, mapLx, mapLy, cv2.INTER_LINEAR)
                 rectR = cv2.remap(frameR_s, mapRx, mapRy, cv2.INTER_LINEAR)
 
-                # compute stereo disparity & depth map
+                # Stereo depth
                 disparity, _ = compute_stereo_disparity(rectL, rectR, K_L_s)
                 points_3d = cv2.reprojectImageTo3D(disparity, Q)
                 depth_map = points_3d[:, :, 2]
                 depth_map[(disparity <= 0) | ~np.isfinite(depth_map)] = 0
 
-                # run YOLO detection
+                # YOLO
                 results = model.predict(frameL, conf=0.35, verbose=False)
 
                 for r in results:
@@ -357,11 +388,11 @@ def main():
                         continue
 
                     for box in r.boxes:
-
                         if float(box.conf[0]) < CONFIDENCE_THRESHOLD:
                             continue
 
                         x1, y1, x2, y2 = box.xyxy[0].tolist()
+
                         box_s = (
                             x1 * SCALE_FOR_MATCHING,
                             y1 * SCALE_FOR_MATCHING,
@@ -374,75 +405,157 @@ def main():
                             continue
 
                         Z, coverage = depth_info
+                        depth_samples.append((Z, coverage))
 
-                        # collect detections for batch
-                        detections.append((x1, y1, x2, y2, Z, coverage))
-                        # save frame as png
-                        image_path = os.path.join(log_folder, f"frame_{image_counter:03d}.png")
+                        detections.append({
+                            "bbox": (x1, y1, x2, y2),
+                            "Z": Z,
+                            "coverage": coverage
+                        })
+
+                        # save frame as jpg
+                        image_path = os.path.join(log_folder, f"frame_{image_counter:03d}.jpg")
                         cv2.imwrite(image_path, frameL)
                         image_counter += 1
 
-                    if not detections:
-                        print("[WARN] No valid detections in batch")
+            # --------------------------------------------------
+            # No detections at all
+            # --------------------------------------------------
+            if len(depth_samples) == 0:
+                print("[WARN] No valid detections in batch")
+                coord_push.send_json({
+                    "request_id": current_request_id,
+                    "status": "no_detection"
+                })
+                print("[INFO] Sent NO_DETECTION response — waiting for next batch")
+                continue
 
-                        coord_push.send_json({
-                            "request_id": current_request_id,
-                            "status": "no_detection"
-                        })
+            # --------------------------------------------------
+            # Choose bbox ONCE (highest coverage)
+            # --------------------------------------------------
+            best = max(detections, key=lambda d: d["coverage"])
+            x1, y1, x2, y2 = best["bbox"]
+            u, v = (x1 + x2) / 2, (y1 + y2) / 2
 
-                        print("[INFO] Sent NO_DETECTION response — ready for next Enter")
-                        break
+            # --------------------------------------------------
+            # Median depth over ALL frames
+            # --------------------------------------------------
+            # depth_samples = [(d["Z"], d["coverage"]) for d in detections]
 
-                    chosen = max(detections, key=lambda d: d[5])
-                    x1, y1, x2, y2, Z, coverage = chosen
-                    u, v = (x1 + x2)/2, (y1 + y2)/2
+            Z_robust, coverage_final = robust_depth_estimate(depth_samples)
 
-                    Z_corr = apply_depth_bias(Z * 100) / 100.0
-                    P_base, status = compute_grasp_pose(u, v, Z_corr, coverage)
+            if Z_robust is None:
+                print("[REJECTED] Robust depth estimation failed")
+                coord_push.send_json({
+                    "request_id": current_request_id,
+                    "status": "no_detection"
+                })
+                continue
 
-                    if P_base is None:
-                        print(f"[REJECTED] {status}")
-                        break
+            Z_final = apply_depth_bias(Z_robust * 100) / 100.0
 
-                    P_base = P_base.flatten()
-                    csv_writer.writerow([
-                        log_id, frame_counter,
-                        round(u,2), round(v,2), round(Z_corr,4), round(coverage,2),
-                        round(float(P_base[0]),4),
-                        round(float(P_base[1]),4),
-                        round(float(P_base[2]),4)
-                    ])
-                    csv_file.flush()
+            # --------------------------------------------------
+            # Manual confirmation step
+            # --------------------------------------------------
+            print("\n=== DEPTH CHECK ===")
+            print(f"Pixel (u,v): ({u:.1f}, {v:.1f})")
+            print(f"Estimated depth: {Z_final:.3f} m")
+            print(f"Coverage: {coverage_final:.1f} %")
 
-                    print("\n=== FINAL OUTPUT ===")
-                    print(f"Pixel (u,v): ({u:.1f},{v:.1f})")
-                    print(f"Depth: {Z_corr:.3f} m")
-                    print("Robot base XYZ (m):")
-                    print(P_base)
+            choice = input("Send this to Pi? [y/n]: ").strip().lower()
 
-                    # Send coordinates to Pi
-                    coord_payload = {
+            if choice == "n":
+                sub = input("Enter 1 = recapture | 2 = manual depth (cm): ").strip()
+
+                if sub == "1":
+                    coord_push.send_json({
                         "request_id": current_request_id,
-                        "u": float(u),
-                        "v": float(v),
-                        "depth_m": float(Z_corr),
-                        "coverage_pct": float(coverage),
-                        "X_base_m": float(P_base[0]),
-                        "Y_base_m": float(P_base[1]),
-                        "Z_base_m": float(P_base[2]),
-                    }
-                    coord_push.send_json(coord_payload)
-                    print(f"[SEND] request_id={current_request_id}")
-                    print("[INFO] Coordinates sent — ready for next Enter")
-                    batch_success = True
-                    break
-            if not batch_success:
-                print("[INFO] Batch ended without valid grasp — waiting for next ENTER")
+                        "status": "recapture"
+                    })
+                    print("[INFO] Requested recapture from Pi")
+                    continue
+
+                elif sub == "2":
+                    Z_manual_cm = float(input("Enter depth in cm: "))
+                    Z_final = Z_manual_cm / 100.0
+                    print(f"[INFO] Using manual depth: {Z_final:.3f} m")
+
+                else:
+                    print("[WARN] Invalid input — skipping batch")
+                    continue
+
+            # --------------------------------------------------
+            # Compute grasp pose (P_base defined ONCE)
+            # --------------------------------------------------
+            P_base, status = compute_grasp_pose(u, v, Z_final, coverage_final)
+
+            if P_base is None:
+                print(f"[REJECTED] {status}")
+                # Tell Pi this batch is rejected so it can send a new one
+                coord_push.send_json({
+                    "request_id": current_request_id,
+                    "status": "no_detection",
+                    "reason": status
+                })
+                print("[INFO] Notified Pi of rejection — waiting for next batch")
+                continue
+
+            P_base = P_base.flatten()
+
+            # --------------------------------------------------
+            # CSV logging (now always valid)
+            # --------------------------------------------------
+            csv_writer.writerow([
+                log_id,
+                frame_counter,
+                round(u, 2),
+                round(v, 2),
+                round(Z_final, 4),
+                round(coverage_final, 2),
+                round(float(P_base[0]), 4),
+                round(float(P_base[1]), 4),
+                round(float(P_base[2]), 4),
+            ])
+            csv_file.flush()
+
+            # --------------------------------------------------
+            # Output
+            # --------------------------------------------------
+            print("\n=== FINAL OUTPUT ===")
+            print(f"Pixel (u,v): ({u:.1f}, {v:.1f})")
+            print(f"Depth: {Z_final:.3f} m")
+            print("Robot base XYZ (m):")
+            print(P_base)
+
+            # --------------------------------------------------
+            # Send ONCE to Pi
+            # --------------------------------------------------
+            MM_PER_M = 1000.0
+
+            coord_push.send_json({
+                "request_id": current_request_id,
+                "u": float(u),
+                "v": float(v),
+
+                # Depth
+                "depth_mm": float(Z_final * MM_PER_M),
+                "coverage_pct": float(coverage_final),
+
+                # Robot base frame (mm)
+                "X_base_mm": float(P_base[0] * MM_PER_M),
+                "Y_base_mm": float(P_base[1] * MM_PER_M),
+                "Z_base_mm": float(P_base[2] * MM_PER_M),
+            })
+
+            print(f"[SEND] request_id={current_request_id}")
+            print("[SEND] Coordinates sent — waiting for next ENTER")
+
     finally:
         coord_push.close()
         ctx.term()
         csv_file.close()
-        print("[INFO] Processing complete.")
+        print("[INFO] Shutdown clean")
+
 
 if __name__ == "__main__":
     main()
