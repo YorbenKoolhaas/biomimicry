@@ -20,7 +20,6 @@ def home():
 @socketio.on('vision_coords')
 def handle_vision_coords(data):
     coords = vision.main()
-    next(coords)
     print(coords)
 
     current_pos["x"] = coords[0]
