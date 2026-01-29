@@ -119,5 +119,4 @@ if __name__ == "__main__":
     z = 0
 
     solution = calculate_angles(x, y, z, L1=180, L2=180, L3=70, psi=0)
-    print(solution)
     draw_robot(solution)

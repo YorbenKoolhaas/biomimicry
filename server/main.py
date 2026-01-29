@@ -21,6 +21,7 @@ def home():
 def handle_vision_coords(data):
     coords = vision.main()
     next(coords)
+    print(coords)
 
     current_pos["x"] = coords[0]
     current_pos["y"] = coords[1]

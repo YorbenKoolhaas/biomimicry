@@ -30,6 +30,11 @@ class Comms:
         print(command)
         self.SER_ARM.write(command.encode('utf-8'))
 
+        while True:
+            if self.SER_ARM.in_waiting > 0:
+                line = self.SER_ARM.readline().decode('utf-8').rstrip()
+                print(f"Arm data: {line}")
+
         return True
     
     def move_scissors(self, amount: float | int) -> True:
