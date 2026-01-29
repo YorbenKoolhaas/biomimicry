@@ -115,21 +115,28 @@ def main():
             # receive coordinates
             while True:
                 coord_data = coord_pull.recv_json()
-
+            
                 if coord_data.get("status") == "no_detection":
                     print("⚠️ No strawberry detected or depth too far!! Press ENTER to try again\n")
-                    break    # exit loop and allow user to press ENTER again
+                    return None
+            
                 if coord_data.get("request_id") == request_id:
-                    # valid coordinates
                     print("✅ Coordinates received:")
                     print(coord_data)
-
-                    yield coord_data
-
+            
+                    coords = [
+                        coord_data["X_base_mm"],
+                        coord_data["Y_base_mm"],
+                        coord_data["Z_base_mm"],
+                    ]
+            
                     print("🚀 Handed off to robot pipeline\n")
-                    break
+            
+                    return coords
+            
                 else:
                     print("⚠️ Discarded stale coordinate packet")
+
 
 if __name__ == "__main__":
     main()
