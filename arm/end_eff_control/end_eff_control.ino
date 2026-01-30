@@ -21,7 +21,7 @@ const int SERVO_PIN = 10;      // SERVO1 on HW130
 const int SERVO_MIN = 0;
 const int SERVO_MAX = 180;
 
-const int PUMP_PIN = A4
+const int PUMP_PIN = A4;
 // =====================================================
 // LIMIT SWITCHES
 // =====================================================
