@@ -1,7 +1,6 @@
 #include <Servo.h>
 #include <AFMotor.h>
 
-#define PUMP_PIN 14
 
 // =====================================================
 // AXIS DIRECTION ALIAS (FLIP HERE IF NEEDED)
@@ -22,6 +21,7 @@ const int SERVO_PIN = 10;      // SERVO1 on HW130
 const int SERVO_MIN = 0;
 const int SERVO_MAX = 180;
 
+const int PUMP_PIN = A4
 // =====================================================
 // LIMIT SWITCHES
 // =====================================================
