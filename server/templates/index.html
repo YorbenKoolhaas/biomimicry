@@ -61,6 +61,17 @@
             <p id="status"></p>
         </div>
 
+        <div class="card">
+            <h2>Pump Gripper</h2>
+            <form id="gripperForm">
+                <div class="coord-grid">
+                    <label>Time (ms) <input id="time_ms" type="number" step="1" value="1000"></label>
+                </div>
+                <button class="submit-btn" type="submit">Pump Gripper</button>
+            </form>
+            <p id="status"></p>
+        </div>
+
         <!-- Future Video Panels -->
         <div class="card video-area">
             <h2>Camera Streams (In construction)</h2>
@@ -104,6 +115,12 @@
             const amount = document.getElementById("amount").value;
 
             socket.emit('move_scissors', { amount });
+        }
+
+        function sendGripper() {
+            const time_ms = document.getElementById("time_ms").value;
+
+            socket.emit('pump_gripper', { time_ms });
         }
 
         function trigger_vision() {

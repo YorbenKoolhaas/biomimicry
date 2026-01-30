@@ -9,8 +9,8 @@ class Comms:
             self.SER_ARM = Serial("/dev/arduino_arm", 9600, timeout=1)
             self.SER_ARM.reset_input_buffer()
 
-            # self.SER_END = Serial("/dev/arduino_gripnsnip", 9600, timeout=1)
-            # self.SER_END.reset_input_buffer()
+            self.SER_END = Serial("/dev/arduino_gripnsnip", 9600, timeout=1)
+            self.SER_END.reset_input_buffer()
         except Exception as e:
             print(f"Error initializing serial communication: {e}")
             os._exit(1)
@@ -45,7 +45,15 @@ class Comms:
         Closes the scissors when destination is reached."""
 
         command = f"SCISSORS {int(amount*100)}\n"
-        # self.SER_END.write(command.encode('utf-8'))
+        self.SER_END.write(command.encode('utf-8'))
+
+        return True
+    
+    def pump_gripper(self, time_ms: int) -> True:
+        """Activates the gripper pump for the specified time in milliseconds."""
+
+        command = f"PUMP {int(time_ms)}\n"
+        self.SER_END.write(command.encode('utf-8'))
 
         return True
     
@@ -60,8 +68,9 @@ class Comms:
                 print(f"Arm data: {line}")
                 # emit("received_data", {"data": line})
             
-            # if self.SER_END.in_waiting > 0:
-            #     line = self.SER_END.readline().decode('utf-8').rstrip()
+            if self.SER_END.in_waiting > 0:
+                line = self.SER_END.readline().decode('utf-8').rstrip()
+                print(f"End effector data: {line}")
                 # emit("received_data", {"data": line})
 
     

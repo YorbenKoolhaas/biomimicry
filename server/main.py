@@ -85,6 +85,17 @@ def handle_move_scissors(data):
     else:
         emit('scissors_moved', {"status": "ok"})
 
+@socketio.on('pump_gripper')
+def handle_pump_gripper(data):
+    time_ms = int(data['time_ms'])
+
+    succes = comms.pump_gripper(time_ms)
+
+    if not succes:
+        emit('error_msg', {"status": "error", "message": "Failed to pump gripper"})
+    else:
+        emit('gripper_pumped', {"status": "ok"})
+
 @socketio.on('error_msg')
 def handle_error(data):
     print(data['message'])
