@@ -102,12 +102,17 @@ def handle_error(data):
 
 
 if __name__ == "__main__":
-    comms = comms.Comms()
-    threads = []
-    threads.append(threading.Thread(target=socketio.run, args=(app, ), kwargs={"port": 5000, "debug": False}))
-    threads.append(threading.Thread(target=comms.receive_data))
+    try:
+        comms = comms.Comms()
+        threads = []
+        threads.append(threading.Thread(target=socketio.run, args=(app, ), kwargs={"port": 5000, "debug": False}))
+        threads.append(threading.Thread(target=comms.receive_data))
 
-    for thread in threads:
-        thread.start()
+        for thread in threads:
+            thread.start()
+    except Exception as e:
+        comms.move_arm(50, 100, 0)
+        print("stopping program, moving arm to safe position")
+        os._exit(1)
 
 

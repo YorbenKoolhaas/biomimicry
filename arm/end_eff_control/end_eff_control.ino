@@ -39,7 +39,7 @@ int pump_gripper(int time_ms) {
   digitalWrite(PUMP_PIN, HIGH);
   delay(time_ms);
   digitalWrite(PUMP_PIN, LOW);
-  return 0;
+  return 1;
 }
 
 void runServoTwice() {
@@ -133,7 +133,7 @@ void setup() {
   cutter.write(SERVO_MIN);
 
   Serial.println("HW130 homing + midpoint + servo sequence started");
-  home_scissors();
+//  home_scissors();
 
 }
 
@@ -141,6 +141,18 @@ void loop() {
   if (Serial.available() > 0) {
     String command = Serial.readStringUntil('\n');
     command.trim();
+    Serial.println(command);
+    if (command.startsWith("PUMP ")) {
+      int time_ms;
+      sscanf(command.c_str(), "PUMP %d", &time_ms);
+      int result = pump_gripper(time_ms);
+      if (result == 1) {
+        Serial.println("Pump operation successful");
+      } else {
+        Serial.println("Pump operation failed");
+      }
+    }
+    
     if (command.startsWith("SCISSORS ")) {
       int amount;
       sscanf(command.c_str(), "SCISSORS %d", &amount);
@@ -150,17 +162,6 @@ void loop() {
       } else {
         Serial.println("Move scissors failed");
       }
-    } else if (command.startsWith("PUMP ")) {
-      int time_ms;
-      sscanf(command.c_str(), "PUMP %d", &time_ms);
-      int result = pump_gripper(time_ms);
-      if (result == 1) {
-        Serial.println("Pump operation successful");
-      } else {
-        Serial.println("Pump operation failed");
-      }
-    } else {
-      Serial.println("Unknown command");
     }
   }
 }
